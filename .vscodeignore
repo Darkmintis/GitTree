@@ -1,0 +1,12 @@
+.vscode/**
+.gitignore
+.eslintrc.json
+tsconfig.json
+esbuild.js
+webview/**
+node_modules/**
+shared/**
+extension/**/*.ts
+!extension/**/*.js
+!shared/types.js
+assets/icon.svg
