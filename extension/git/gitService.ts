@@ -1,16 +1,134 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
-import { GitData, GitCommit, GitBranch, GitTag } from '../../shared/types';
+import * as fs from 'fs';
+import * as path from 'path';
+import { GitData, GitCommit, GitBranch, GitTag, RepoGitData } from '../../shared/types';
+
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', 'out', '.next', '.cache',
+  'vendor', 'target', 'coverage', '.turbo', '.venv', 'venv',
+]);
 
 export class GitService {
   private workspacePath: string;
 
-  constructor() {
+  constructor(workspacePath?: string) {
+    if (workspacePath) {
+      this.workspacePath = workspacePath;
+      return;
+    }
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
       throw new Error('No workspace folder open');
     }
     this.workspacePath = workspaceFolders[0].uri.fsPath;
+  }
+
+  /** Discover Git repos in the workspace (roots + nested children, capped). */
+  static async discoverRepos(maxRepos = 12): Promise<string[]> {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders?.length) return [];
+
+    const found = new Set<string>();
+
+    for (const folder of folders) {
+      const root = folder.uri.fsPath;
+      const top = await GitService.resolveGitRoot(root);
+      if (top) found.add(top);
+
+      // Immediate children that are repos (common "projects/" folder case)
+      try {
+        const entries = await fs.promises.readdir(root, { withFileTypes: true });
+        for (const entry of entries) {
+          if (!entry.isDirectory() || SKIP_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+          const child = path.join(root, entry.name);
+          const childRoot = await GitService.resolveGitRoot(child);
+          if (childRoot) found.add(childRoot);
+          if (found.size >= maxRepos) break;
+        }
+      } catch {
+        // ignore unreadable dirs
+      }
+
+      // Shallow nested scan (depth 2) for leftover repos
+      if (found.size < maxRepos) {
+        await GitService.scanForGit(root, found, 0, 2, maxRepos);
+      }
+    }
+
+    return Array.from(found).slice(0, maxRepos);
+  }
+
+  static async loadAllRepos(maxRepos = 12): Promise<RepoGitData[]> {
+    const roots = await GitService.discoverRepos(maxRepos);
+    const repos: RepoGitData[] = [];
+
+    for (const repoPath of roots) {
+      try {
+        const service = new GitService(repoPath);
+        const data = await service.getGitData();
+        repos.push({
+          id: repoPath,
+          name: path.basename(repoPath),
+          path: repoPath,
+          data,
+        });
+      } catch {
+        // skip broken repos
+      }
+    }
+
+    return repos;
+  }
+
+  private static async resolveGitRoot(dir: string): Promise<string | null> {
+    try {
+      const out = await GitService.execGitIn(dir, 'rev-parse --show-toplevel');
+      const root = out.trim();
+      return root || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private static async scanForGit(
+    dir: string,
+    found: Set<string>,
+    depth: number,
+    maxDepth: number,
+    maxRepos: number
+  ): Promise<void> {
+    if (depth > maxDepth || found.size >= maxRepos) return;
+    let entries: fs.Dirent[];
+    try {
+      entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    if (entries.some((e) => e.isDirectory() && e.name === '.git')) {
+      const root = await GitService.resolveGitRoot(dir);
+      if (root) found.add(root);
+      return; // don't scan inside a repo
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || SKIP_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+      await GitService.scanForGit(path.join(dir, entry.name), found, depth + 1, maxDepth, maxRepos);
+      if (found.size >= maxRepos) return;
+    }
+  }
+
+  private static execGitIn(cwd: string, args: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      exec(`git ${args}`, { cwd, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+        if (err) {
+          reject(new Error(stderr || err.message));
+          return;
+        }
+        resolve(stdout);
+      });
+    });
   }
 
   async getGitData(): Promise<GitData> {
@@ -199,14 +317,6 @@ export class GitService {
   }
 
   private execGit(args: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      exec(`git ${args}`, { cwd: this.workspacePath, maxBuffer: 10 * 1024 * 1024 }, (err: Error | null, stdout: string, stderr: string) => {
-        if (err) {
-          reject(new Error(stderr || err.message));
-          return;
-        }
-        resolve(stdout);
-      });
-    });
+    return GitService.execGitIn(this.workspacePath, args);
   }
 }
