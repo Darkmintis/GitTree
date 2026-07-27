@@ -48,6 +48,13 @@ export interface GitData {
   lastCommitDate: Date;
 }
 
+export interface RepoGitData {
+  id: string;
+  name: string;
+  path: string;
+  data: GitData;
+}
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -103,6 +110,15 @@ export interface TreeLayout3D {
   trunkHeight: number;
   canopyRadius: number;
   totalLeaves: number;
+}
+
+export interface PlacedTree {
+  id: string;
+  name: string;
+  path: string;
+  data: GitData;
+  layout: TreeLayout3D;
+  position: Vec3;
 }
 
 export type ThemeName = 'oak' | 'sakura' | 'pine';
