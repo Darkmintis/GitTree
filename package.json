@@ -34,15 +34,24 @@
     "commands": [
       {
         "command": "gittree.showTree",
-        "title": "GitTree: Show Tree"
+        "title": "Show Tree",
+        "category": "GitTree",
+        "icon": {
+          "light": "assets/icons/tree.svg",
+          "dark": "assets/icons/tree.svg"
+        }
       },
       {
         "command": "gittree.refresh",
-        "title": "GitTree: Refresh"
+        "title": "Refresh",
+        "category": "GitTree",
+        "icon": "$(refresh)"
       },
       {
         "command": "gittree.exportSnapshot",
-        "title": "GitTree: Export Snapshot"
+        "title": "Export Snapshot",
+        "category": "GitTree",
+        "icon": "$(save)"
       }
     ],
     "viewsContainers": {
@@ -59,7 +68,34 @@
         {
           "type": "tree",
           "id": "gittree.sidebar",
-          "name": "Repository"
+          "name": "GitTree"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "gittree.sidebar",
+        "contents": "See your Git history as a living 3D tree.\n[Open GitTree](command:gittree.showTree)\n\nOpen a folder that is a Git repository, then click the button above."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gittree.showTree",
+          "when": "view == gittree.sidebar",
+          "group": "navigation@1"
+        },
+        {
+          "command": "gittree.refresh",
+          "when": "view == gittree.sidebar",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gittree.showTree",
+          "when": "view == gittree.sidebar",
+          "group": "inline@1"
         }
       ]
     },
@@ -68,7 +104,7 @@
       "properties": {
         "gittree.animationSpeed": {
           "type": "number",
-          "default": 1.0,
+          "default": 1,
           "minimum": 0,
           "maximum": 3,
           "description": "Animation speed multiplier"
@@ -79,37 +115,9 @@
           "enum": [
             "oak",
             "sakura",
-            "pine",
-            "maple",
-            "fantasy",
-            "cyber",
-            "pixel",
-            "minimal",
-            "darkForest",
-            "crystal",
-            "bonsai"
+            "pine"
           ],
-          "description": "Tree theme"
-        },
-        "gittree.showLeaves": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show commit leaves"
-        },
-        "gittree.showFruits": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show PR fruits"
-        },
-        "gittree.showFlowers": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show release flowers"
-        },
-        "gittree.particleEffects": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable particle effects"
+          "description": "Tree theme (Oak, Sakura, or Pine)"
         },
         "gittree.windEnabled": {
           "type": "boolean",
@@ -125,7 +133,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run build:extension",
+    "vscode:prepublish": "npm run build",
     "build:extension": "node esbuild.js --production",
     "dev:extension": "node esbuild.js --sourcemap --watch",
     "build:webview": "cd webview && npm run build",
@@ -139,8 +147,5 @@
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.3.0"
-  },
-  "dependencies": {
-    "simple-git": "^3.22.0"
   }
 }
