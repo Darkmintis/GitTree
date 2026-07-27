@@ -1,22 +1,25 @@
 import { TreeTheme, ThemeName } from '@shared/types';
 
+/** Natural leaf greens shared across themes (flowers/fruits still theme-specific). */
+const realGreens = {
+  recent: '#7CB342',
+  young: '#66BB6A',
+  mature: '#43A047',
+  old: '#2E7D32',
+  stale: '#558B2F',
+};
+
 const themes: Record<ThemeName, TreeTheme> = {
   oak: {
     name: 'oak',
     label: 'Oak',
     trunk: { primary: '#6D4C41', secondary: '#3E2723' },
     branch: { primary: '#8D6E63', secondary: '#5D4037' },
-    leaves: {
-      recent: '#81C784',
-      young: '#66BB6A',
-      mature: '#43A047',
-      old: '#2E7D32',
-      stale: '#827717',
-    },
+    leaves: { ...realGreens },
     flowers: { petal: '#FFCC80', center: '#FFE0B2' },
     fruits: { open: '#FF7043', merged: '#66BB6A', closed: '#9E9E9E' },
-    ground: '#3E5C2E',
-    grass: '#4CAF50',
+    ground: '#4CAF50',
+    grass: '#66BB6A',
     sky: {
       turbidity: 4,
       rayleigh: 1.2,
@@ -33,17 +36,11 @@ const themes: Record<ThemeName, TreeTheme> = {
     label: 'Sakura',
     trunk: { primary: '#8D6E63', secondary: '#5D4037' },
     branch: { primary: '#A1887F', secondary: '#6D4C41' },
-    leaves: {
-      recent: '#FCE4EC',
-      young: '#F8BBD0',
-      mature: '#F48FB1',
-      old: '#EC407A',
-      stale: '#AD1457',
-    },
+    leaves: { ...realGreens },
     flowers: { petal: '#FCE4EC', center: '#F8BBD0' },
     fruits: { open: '#E91E63', merged: '#C2185B', closed: '#9C27B0' },
-    ground: '#5D4037',
-    grass: '#81C784',
+    ground: '#4CAF50',
+    grass: '#66BB6A',
     sky: {
       turbidity: 6,
       rayleigh: 1.5,
@@ -61,16 +58,16 @@ const themes: Record<ThemeName, TreeTheme> = {
     trunk: { primary: '#4E342E', secondary: '#3E2723' },
     branch: { primary: '#5D4037', secondary: '#3E2723' },
     leaves: {
-      recent: '#A5D6A7',
-      young: '#66BB6A',
-      mature: '#2E7D32',
-      old: '#1B5E20',
-      stale: '#33691E',
+      recent: '#8BC34A',
+      young: '#689F38',
+      mature: '#558B2F',
+      old: '#33691E',
+      stale: '#1B5E20',
     },
     flowers: { petal: '#C8E6C9', center: '#E8F5E9' },
     fruits: { open: '#8D6E63', merged: '#558B2F', closed: '#795548' },
-    ground: '#2E4A22',
-    grass: '#388E3C',
+    ground: '#4CAF50',
+    grass: '#66BB6A',
     sky: {
       turbidity: 3.5,
       rayleigh: 1.0,
