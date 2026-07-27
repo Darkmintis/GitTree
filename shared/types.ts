@@ -48,162 +48,88 @@ export interface GitData {
   lastCommitDate: Date;
 }
 
-export interface Vec2 {
+export interface Vec3 {
   x: number;
   y: number;
+  z: number;
 }
 
-export interface CommitLayout {
-  hash: string;
-  message: string;
-  author: string;
-  date: Date;
-  position: Vec2;
-  size: number;
-  color: string;
-  rotation: number;
-  opacity: number;
-  filesChanged: number;
-  isMerge: boolean;
-  isHead: boolean;
-}
-
-export interface BranchLayout {
-  id: string;
-  name: string;
-  path: Vec2[];
-  controlPoints: Vec2[];
-  angle: number;
-  length: number;
-  thickness: number;
-  baseThickness: number;
-  tipThickness: number;
-  color: string;
-  opacity: number;
-  commits: CommitLayout[];
-  startCommit: GitCommit | null;
-  endCommit: GitCommit | null;
-  isMain: boolean;
-  isCurrent: boolean;
-  isStale: boolean;
-  depth: number;
-  side: 'left' | 'right';
-  branchPoint: Vec2;
-  leaves: LeafLayout[];
-  fruits: FruitLayout[];
-  flowers: FlowerLayout[];
-}
-
-export interface LeafLayout {
+export interface LeafInstance {
   id: string;
   commit: GitCommit;
-  position: Vec2;
-  size: number;
+  /** Point on the branch/trunk surface where the stem starts */
+  attachPoint: Vec3;
+  /** Leaf blade center */
+  position: Vec3;
+  /** Outward direction from wood through the leaf */
+  normal: Vec3;
+  scale: number;
   color: string;
   rotation: number;
-  opacity: number;
   swayPhase: number;
-  shape: 'oval' | 'heart' | 'round' | 'long';
+  appearAt: number;
+  interactive: boolean;
 }
 
-export interface FruitLayout {
+export interface BranchSegment3D {
   id: string;
-  position: Vec2;
-  size: number;
+  name: string;
+  points: Vec3[];
+  radius: number;
+  tipRadius: number;
+  isMain: boolean;
+  isCurrent: boolean;
+  appearAt: number;
   color: string;
-  type: 'open' | 'merged' | 'closed';
-  label: string;
 }
 
-export interface FlowerLayout {
+export interface Decoration3D {
   id: string;
-  position: Vec2;
-  size: number;
+  /** Where stem attaches to wood */
+  attachPoint: Vec3;
+  position: Vec3;
+  scale: number;
   color: string;
-  petalColor: string;
-  centerColor: string;
+  type: 'fruit' | 'flower';
   label: string;
-  bloomProgress: number;
+  appearAt: number;
+  commit?: GitCommit;
 }
 
-export interface TreeLayout {
-  branches: BranchLayout[];
-  width: number;
-  height: number;
-  viewBox: string;
-  trunkTip: Vec2;
-  trunkBase: Vec2;
-  maxDepth: number;
+export interface TreeLayout3D {
+  branches: BranchSegment3D[];
+  leaves: LeafInstance[];
+  decorations: Decoration3D[];
+  trunkHeight: number;
+  canopyRadius: number;
   totalLeaves: number;
 }
 
-export type ThemeName =
-  | 'oak'
-  | 'sakura'
-  | 'pine'
-  | 'maple'
-  | 'fantasy'
-  | 'cyber'
-  | 'pixel'
-  | 'minimal'
-  | 'darkForest'
-  | 'crystal'
-  | 'bonsai';
+export type ThemeName = 'oak' | 'sakura' | 'pine';
 
 export interface TreeTheme {
   name: ThemeName;
   label: string;
-  trunk: { primary: string; secondary: string; gradient: string[] };
-  branch: { primary: string; secondary: string; gradient: string[] };
+  trunk: { primary: string; secondary: string };
+  branch: { primary: string; secondary: string };
   leaves: {
     recent: string;
     young: string;
     mature: string;
     old: string;
     stale: string;
-    gradient: string[];
   };
-  flowers: {
-    petal: string;
-    center: string;
-    gradient: string[];
-  };
-  fruits: {
-    open: string;
-    merged: string;
-    closed: string;
-  };
-  background: {
-    primary: string;
-    secondary: string;
-    gradient: boolean;
-    sky: string[];
-    ground: string[];
-  };
+  flowers: { petal: string; center: string };
+  fruits: { open: string; merged: string; closed: string };
   ground: string;
-  effects: {
-    particles: string;
-    glow: string;
-    wind: boolean;
-  };
+  grass: string;
+  sky: { turbidity: number; rayleigh: number; mieCoefficient: number; sunPosition: [number, number, number] };
   accent: string;
-  text: {
-    primary: string;
-    secondary: string;
-    muted: string;
-  };
+  text: { primary: string; secondary: string; muted: string };
+  overlay: { bg: string; border: string };
 }
 
-export interface ViewState {
-  zoom: number;
-  panX: number;
-  panY: number;
-  rotation: number;
-  centerX: number;
-  centerY: number;
-}
-
-export type ViewMode = 'living' | 'explorer' | 'replay';
+export type ViewMode = 'living' | 'replay';
 
 export interface TreeSettings {
   animationSpeed: number;
@@ -211,24 +137,6 @@ export interface TreeSettings {
   showLeaves: boolean;
   showFruits: boolean;
   showFlowers: boolean;
-  particleEffects: boolean;
   windEnabled: boolean;
   performanceMode: boolean;
-}
-
-export interface TreeStore {
-  treeData: GitData | null;
-  treeLayout: TreeLayout | null;
-  theme: TreeTheme;
-  themeName: ThemeName;
-  viewState: ViewState;
-  viewMode: ViewMode;
-  selectedCommit: GitCommit | null;
-  selectedBranch: GitBranch | null;
-  hoveredCommit: GitCommit | null;
-  loading: boolean;
-  error: string | null;
-  settings: TreeSettings;
-  replayProgress: number;
-  isReplaying: boolean;
 }
