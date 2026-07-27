@@ -15,6 +15,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   registerCommands(context);
 
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBar.text = '$(symbol-namespace) GitTree';
+  statusBar.tooltip = 'Open GitTree living 3D view';
+  statusBar.command = 'gittree.showTree';
+  statusBar.show();
+  context.subscriptions.push(statusBar);
+
   vscode.commands.executeCommand('setContext', 'gittree:activated', true);
 
   console.log('[GitTree] Activated successfully!');
