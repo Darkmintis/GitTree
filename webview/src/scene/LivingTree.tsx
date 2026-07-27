@@ -7,9 +7,10 @@ import { Decorations } from './Decorations';
 interface LivingTreeProps {
   layout: TreeLayout3D;
   theme: TreeTheme;
+  repoPath?: string;
 }
 
-export function LivingTree({ layout, theme }: LivingTreeProps) {
+export function LivingTree({ layout, theme, repoPath }: LivingTreeProps) {
   const branches = useMemo(() => layout.branches, [layout]);
 
   return (
@@ -17,7 +18,7 @@ export function LivingTree({ layout, theme }: LivingTreeProps) {
       {branches.map((branch) => (
         <BranchMesh key={branch.id} branch={branch} theme={theme} />
       ))}
-      <Leaves leaves={layout.leaves} theme={theme} />
+      <Leaves leaves={layout.leaves} theme={theme} repoPath={repoPath} />
       <Decorations decorations={layout.decorations} theme={theme} />
     </group>
   );

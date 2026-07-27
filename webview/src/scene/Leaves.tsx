@@ -7,6 +7,7 @@ import { useTreeStore } from '../store/treeStore';
 interface LeavesProps {
   leaves: LeafInstance[];
   theme: TreeTheme;
+  repoPath?: string;
 }
 
 const MAX_LEAVES = 2200;
@@ -18,7 +19,7 @@ function orientLeaf(dummy: THREE.Object3D, normal: { x: number; y: number; z: nu
   dummy.quaternion.copy(quat).multiply(twistQ);
 }
 
-export function Leaves({ leaves }: LeavesProps) {
+export function Leaves({ leaves, repoPath }: LeavesProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const replayProgress = useTreeStore((s) => s.replayProgress);
   const windEnabled = useTreeStore((s) => s.settings.windEnabled);
@@ -123,7 +124,7 @@ export function Leaves({ leaves }: LeavesProps) {
     e.stopPropagation();
     const leaf = pickLeaf(e);
     if (!leaf) return;
-    selectCommit(leaf.commit);
+    selectCommit(leaf.commit, repoPath);
   };
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
