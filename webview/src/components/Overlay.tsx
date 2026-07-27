@@ -30,17 +30,21 @@ export function Overlay() {
   const settings = useTreeStore((s) => s.settings);
   const updateSettings = useTreeStore((s) => s.updateSettings);
   const treeData = useTreeStore((s) => s.treeData);
-  const layout = useTreeStore((s) => s.layout);
+  const trees = useTreeStore((s) => s.trees);
   const replayProgress = useTreeStore((s) => s.replayProgress);
   const isReplaying = useTreeStore((s) => s.isReplaying);
   const setReplayProgress = useTreeStore((s) => s.setReplayProgress);
   const setIsReplaying = useTreeStore((s) => s.setIsReplaying);
   const selectedCommit = useTreeStore((s) => s.selectedCommit);
+  const selectedRepoPath = useTreeStore((s) => s.selectedRepoPath);
   const selectCommit = useTreeStore((s) => s.selectCommit);
   const hoveredCommit = useTreeStore((s) => s.hoveredCommit);
   const hoverScreen = useTreeStore((s) => s.hoverScreen);
 
   const themes = getAllThemes();
+  const totalCommits = trees.reduce((n, t) => n + t.data.totalCommits, 0);
+  const totalLeaves = trees.reduce((n, t) => n + t.layout.totalLeaves, 0);
+  const selectedRepo = trees.find((t) => t.path === selectedRepoPath || t.id === selectedRepoPath);
 
   return (
     <div className="overlay" style={{ ['--accent' as string]: theme.accent }}>
@@ -51,8 +55,9 @@ export function Overlay() {
             <strong>GitTree</strong>
             {treeData && (
               <span className="brand-meta">
-                {treeData.totalCommits} commits · {treeData.totalBranches} branches · {treeData.totalContributors} contributors
-                {layout ? ` · ${layout.totalLeaves} leaves` : ''}
+                {trees.length > 1 ? `${trees.length} repos · ` : ''}
+                {totalCommits} commits · {trees.reduce((n, t) => n + t.data.totalBranches, 0)} branches
+                {totalLeaves ? ` · ${totalLeaves} leaves` : ''}
               </span>
             )}
           </div>
@@ -159,6 +164,12 @@ export function Overlay() {
           <p className="commit-msg">{selectedCommit.message}</p>
 
           <div className="commit-details">
+            {selectedRepo && (
+              <div className="detail-row">
+                <span className="detail-label">Repo</span>
+                <span className="detail-value">{selectedRepo.name}</span>
+              </div>
+            )}
             <div className="detail-row">
               <span className="detail-label">Author</span>
               <span className="detail-value">{selectedCommit.author}</span>
@@ -203,7 +214,16 @@ export function Overlay() {
             )}
           </div>
 
-          <button className="open-btn" onClick={() => postToHost({ type: 'openCommit', hash: selectedCommit.hash })}>
+          <button
+            className="open-btn"
+            onClick={() =>
+              postToHost({
+                type: 'openCommit',
+                hash: selectedCommit.hash,
+                repoPath: selectedRepoPath,
+              })
+            }
+          >
             <ExternalLinkIcon size={12} /> Open in Editor
           </button>
         </aside>
