@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { GitService } from '../git/gitService';
 
 let currentPanel: vscode.WebviewPanel | null = null;
@@ -59,7 +60,7 @@ async function showGitTree(context: vscode.ExtensionContext): Promise<void> {
         await sendGitData(currentPanel!);
         break;
       case 'openCommit':
-        await openInEditor(message.hash);
+        await openInEditor(message.hash, message.repoPath);
         break;
       case 'copyHash':
         vscode.env.clipboard.writeText(message.hash);
@@ -78,12 +79,19 @@ async function showGitTree(context: vscode.ExtensionContext): Promise<void> {
 
 async function sendGitData(panel: vscode.WebviewPanel): Promise<void> {
   try {
-    const gitService = new GitService();
-    const gitData = await gitService.getGitData();
+    const repos = await GitService.loadAllRepos(12);
+    if (repos.length === 0) {
+      panel.webview.postMessage({
+        type: 'error',
+        message: 'No Git repositories found in this workspace',
+      });
+      return;
+    }
 
     panel.webview.postMessage({
       type: 'gitData',
-      data: gitData,
+      repos,
+      data: repos[0].data,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to load Git data';
@@ -94,14 +102,15 @@ async function sendGitData(panel: vscode.WebviewPanel): Promise<void> {
   }
 }
 
-async function openInEditor(hash: string): Promise<void> {
+async function openInEditor(hash: string, repoPath?: string): Promise<void> {
   try {
-    const gitService = new GitService();
+    const gitService = new GitService(repoPath);
     const files = await gitService.getCommitFiles(hash);
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders && files.length > 0) {
+    if (files.length > 0) {
+      const base = repoPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!base) return;
       const doc = await vscode.workspace.openTextDocument(
-        vscode.Uri.joinPath(workspaceFolders[0].uri, files[0])
+        vscode.Uri.file(path.join(base, files[0]))
       );
       await vscode.window.showTextDocument(doc);
       vscode.window.showInformationMessage(`Viewing files from commit ${hash.substring(0, 7)}`);
