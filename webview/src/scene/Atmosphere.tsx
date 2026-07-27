@@ -1,67 +1,123 @@
-import React from 'react';
-import { Sky, ContactShadows } from '@react-three/drei';
+import React, { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
+import { Sky } from '@react-three/drei';
 import { TreeTheme } from '@shared/types';
-import { GrassField } from './GrassField';
+import { PlanetEarth } from './PlanetEarth';
 
 interface AtmosphereProps {
   theme: TreeTheme;
+  onGroundClick?: () => void;
 }
 
-export function Atmosphere({ theme }: AtmosphereProps) {
-  const [sx, sy, sz] = theme.sky.sunPosition;
+function CloudPuff({
+  offset,
+  speed,
+  y,
+  z,
+  scale,
+}: {
+  offset: number;
+  speed: number;
+  y: number;
+  z: number;
+  scale: number;
+}) {
+  const group = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    const t = clock.elapsedTime * speed + offset;
+    group.current.position.x = Math.sin(t * 0.15) * 28 + Math.cos(t * 0.07) * 8;
+    group.current.position.y = y + Math.sin(t * 0.2) * 0.6;
+    group.current.position.z = z + Math.cos(t * 0.12) * 6;
+  });
+
+  const parts = useMemo(
+    () => [
+      { p: [0, 0, 0] as [number, number, number], r: 1.8 * scale },
+      { p: [1.7 * scale, 0.25 * scale, 0.3 * scale] as [number, number, number], r: 1.35 * scale },
+      { p: [-1.5 * scale, 0.15 * scale, -0.25 * scale] as [number, number, number], r: 1.2 * scale },
+      { p: [0.4 * scale, 0.55 * scale, -0.5 * scale] as [number, number, number], r: 1.0 * scale },
+    ],
+    [scale]
+  );
+
+  return (
+    <group ref={group}>
+      {parts.map((part, i) => (
+        <mesh key={i} position={part.p}>
+          <sphereGeometry args={[part.r, 12, 10]} />
+          <meshStandardMaterial color="#ffffff" transparent opacity={0.72} roughness={1} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function MovingClouds() {
+  return (
+    <group>
+      <CloudPuff offset={0} speed={1} y={16} z={-26} scale={1.15} />
+      <CloudPuff offset={2.1} speed={0.85} y={18} z={-22} scale={0.9} />
+      <CloudPuff offset={4.4} speed={1.1} y={14} z={-30} scale={1.35} />
+      <CloudPuff offset={1.2} speed={0.7} y={20} z={18} scale={1.05} />
+      <CloudPuff offset={3.3} speed={0.95} y={15} z={22} scale={0.85} />
+      <CloudPuff offset={5.5} speed={0.8} y={19} z={-8} scale={1.2} />
+    </group>
+  );
+}
+
+export function Atmosphere({ onGroundClick }: AtmosphereProps) {
+  const sunPos: [number, number, number] = [70, 55, -25];
 
   return (
     <>
-      <color attach="background" args={['#87CEEB']} />
-      <fog attach="fog" args={['#b8d4f0', 30, 75]} />
+      <color attach="background" args={['#4FA8E8']} />
+      <fog attach="fog" args={['#8EC8F0', 55, 110]} />
 
       <Sky
         distance={450000}
-        sunPosition={[sx, sy, sz]}
-        turbidity={theme.sky.turbidity}
-        rayleigh={theme.sky.rayleigh}
-        mieCoefficient={theme.sky.mieCoefficient}
-        mieDirectionalG={0.85}
+        sunPosition={sunPos}
+        turbidity={2.2}
+        rayleigh={2.8}
+        mieCoefficient={0.003}
+        mieDirectionalG={0.9}
       />
 
-      <ambientLight intensity={0.45} color="#fff8e7" />
-      <hemisphereLight args={['#87CEEB', '#3d5c2e', 0.55]} />
+      <ambientLight intensity={0.55} color="#e8f4ff" />
+      <hemisphereLight args={['#7EC8F8', '#4CAF50', 0.65]} />
       <directionalLight
         castShadow
-        position={[sx, sy, sz]}
-        intensity={1.6}
-        color="#fff5d6"
+        position={sunPos}
+        intensity={1.85}
+        color="#FFF6D5"
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
+        shadow-camera-far={90}
+        shadow-camera-left={-35}
+        shadow-camera-right={35}
+        shadow-camera-top={35}
+        shadow-camera-bottom={-35}
       />
 
-      <mesh position={[sx * 0.35, sy * 0.35, sz * 0.35]}>
-        <sphereGeometry args={[3.2, 24, 24]} />
-        <meshBasicMaterial color="#FFF59D" />
-      </mesh>
-      <mesh position={[sx * 0.35, sy * 0.35, sz * 0.35]}>
-        <sphereGeometry args={[5.5, 24, 24]} />
-        <meshBasicMaterial color="#FFE082" transparent opacity={0.25} />
-      </mesh>
-
-      <group position={[-12, 10, -18]}>
-        <mesh position={[0, 0, 0]}><sphereGeometry args={[1.8, 12, 12]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.45} roughness={1} /></mesh>
-        <mesh position={[1.6, 0.2, 0.3]}><sphereGeometry args={[1.3, 12, 12]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.4} roughness={1} /></mesh>
-        <mesh position={[-1.4, 0.1, -0.2]}><sphereGeometry args={[1.1, 12, 12]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.35} roughness={1} /></mesh>
-      </group>
-      <group position={[14, 12, -22]}>
-        <mesh position={[0, 0, 0]}><sphereGeometry args={[2.1, 12, 12]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.38} roughness={1} /></mesh>
-        <mesh position={[1.8, 0.15, -0.2]}><sphereGeometry args={[1.4, 12, 12]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.32} roughness={1} /></mesh>
+      <group position={[sunPos[0] * 0.42, sunPos[1] * 0.42, sunPos[2] * 0.42]}>
+        <mesh>
+          <sphereGeometry args={[4.2, 28, 28]} />
+          <meshBasicMaterial color="#FFF59D" />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[7.5, 28, 28]} />
+          <meshBasicMaterial color="#FFE082" transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[11, 28, 28]} />
+          <meshBasicMaterial color="#FFECB3" transparent opacity={0.12} depthWrite={false} />
+        </mesh>
       </group>
 
-      <GrassField theme={theme} />
-
-      <ContactShadows position={[0, 0.002, 0]} opacity={0.4} scale={28} blur={2.8} far={14} />
+      <MovingClouds />
+      <PlanetEarth onGroundClick={onGroundClick} />
     </>
   );
 }
